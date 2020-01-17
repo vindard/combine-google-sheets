@@ -46,7 +46,7 @@ def fetch_sheet_data(workbook_name, creds_json, sheet_num=9, from_web=False):
     return all_vals
 
 
-def make_headers(starts_at=2, ends_at=4, all_vals=None):
+def make_headers(all_vals, starts_at=2, ends_at=4):
     starts_at -= 1
     ends_at -= 1
     num_rows = ends_at - (starts_at + 1)
@@ -71,7 +71,8 @@ def make_headers(starts_at=2, ends_at=4, all_vals=None):
 def join_headers_vals(headers, vals):
     all_data = []
     for row in vals:
-        data = {' | '.join(headers[i]): val
+        # data = {' | '.join(headers[i]): val
+        data = {json.dumps(headers[i]): val
                     for i, val in enumerate(row)}
         all_data.append(data)
 
@@ -86,7 +87,11 @@ if __name__ == "__main__":
         sheet_num=9,
         from_web=False
     )
-    headers, vals = make_headers(all_vals=all_vals)
+    headers, vals = make_headers(
+        all_vals,
+        starts_at=2,
+        ends_at=4
+    )
     all_data = join_headers_vals(headers, vals)
 
     print(json.dumps(all_data, indent=2))
