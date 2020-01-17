@@ -1,0 +1,7 @@
+.mypy*
+.vscode
+data
+.python-version
+*.json
+.env
+env*

@@ -1,0 +1,5 @@
+gspread
+ipython
+mypy
+oauth2client
+
