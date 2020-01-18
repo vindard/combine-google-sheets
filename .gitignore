@@ -5,3 +5,5 @@ data
 *.json
 .env
 env*
+__pycache__
+
