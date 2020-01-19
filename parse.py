@@ -4,22 +4,29 @@ import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-WORKBOOK_NAME = os.environ['WORKBOOK']
+WORKBOOK_NAME = os.environ.get('WORKBOOK')
 CREDS_JSON = os.environ['CREDS_JSON']
 
 
-def open_workbook(workbook_name, creds_json):
+def get_client(creds_json=CREDS_JSON):
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scope)
     client = gspread.authorize(creds)
+
+    return client
+
+
+def open_workbook(workbook_name, client=None):
+    if not client:
+        client = get_client()
 
     open_workbook = client.open(workbook_name)
 
     return open_workbook
 
 
-def write_all_sheets_to_disk(workbook_name, creds_json):
-    sheets = open_workbook(workbook_name, creds_json).worksheets()
+def write_all_sheets_to_disk(workbook_name, client=None):
+    sheets = open_workbook(workbook_name, client).worksheets()
     for i, sheet in enumerate(sheets): 
         workbook = f"data/sheet{i+1}" 
         with open(workbook, 'w') as f: 
@@ -27,11 +34,11 @@ def write_all_sheets_to_disk(workbook_name, creds_json):
             f.write(json.dumps(all_vals))
 
 
-def fetch_sheet_data(workbook_name, creds_json, sheet_num=9, from_web=False):
+def fetch_worksheet_data(workbook_name, client=None, sheet_num=9, from_web=False):
     if from_web:
         print("Fetching data from web...")
         sheet_index = sheet_num-1
-        sheet = open_workbook(workbook_name, creds_json).worksheets()[sheet_index]
+        sheet = open_workbook(workbook_name, client).worksheets()[sheet_index]
         all_vals = sheet.get_all_values()
 
     else:
@@ -46,13 +53,17 @@ def fetch_sheet_data(workbook_name, creds_json, sheet_num=9, from_web=False):
     return all_vals
 
 
-def make_headers(all_vals, starts_at=2, ends_at=4):
+def make_headers(all_vals, starts_at=2, num_rows=2):
     starts_at -= 1
-    ends_at -= 1
-    num_rows = ends_at - (starts_at + 1)
+    assert 0 <= starts_at, "Min \"starts_at\" is 1"
+    assert starts_at <= len(all_vals), \
+        "\"starts_at\" longer than length of \"all_vals\""
+    assert 0 <= starts_at + num_rows <= len(all_vals), \
+        "\"num_rows\" is either too big or less than zero"
 
-    headers = [i for i in zip(*all_vals[starts_at:ends_at+1])]
-    vals = all_vals[ends_at+1:]
+    header_end = starts_at + num_rows
+    headers = [i for i in zip(*all_vals[starts_at:header_end])]
+    col_vals = all_vals[header_end:]
 
     new_headers = []
     curr = [''] * num_rows
@@ -65,12 +76,12 @@ def make_headers(all_vals, starts_at=2, ends_at=4):
             curr[i] = item or curr[i]
         new_headers.append(new_col)
 
-    return new_headers, vals
+    return new_headers, col_vals
 
 
-def join_headers_vals(headers, vals):
+def join_headers_vals(headers, col_vals):
     all_data = []
-    for row in vals:
+    for row in col_vals:
         # data = {' | '.join(headers[i]): val
         data = {json.dumps(headers[i]): val
                     for i, val in enumerate(row)}
@@ -81,17 +92,16 @@ def join_headers_vals(headers, vals):
 
 
 if __name__ == "__main__":
-    all_vals = fetch_sheet_data(
+    all_vals = fetch_worksheet_data(
         workbook_name=WORKBOOK_NAME, 
-        creds_json=CREDS_JSON, 
         sheet_num=9,
         from_web=False
     )
-    headers, vals = make_headers(
+    headers, col_vals = make_headers(
         all_vals,
         starts_at=2,
-        ends_at=4
+        num_rows=3
     )
-    all_data = join_headers_vals(headers, vals)
+    all_data = join_headers_vals(headers, col_vals)
 
     print(json.dumps(all_data, indent=2))
