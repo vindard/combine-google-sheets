@@ -63,7 +63,7 @@ def make_headers(all_vals, starts_at=2, num_rows=2):
 
     header_end = starts_at + num_rows
     headers = [i for i in zip(*all_vals[starts_at:header_end])]
-    col_vals = all_vals[header_end:]
+    rows = all_vals[header_end:]
 
     new_headers = []
     curr = [''] * num_rows
@@ -76,18 +76,29 @@ def make_headers(all_vals, starts_at=2, num_rows=2):
             curr[i] = item or curr[i]
         new_headers.append(new_col)
 
-    return new_headers, col_vals
+    return new_headers, rows
 
 
-def join_headers_vals(headers, col_vals):
-    all_data = []
-    for row in col_vals:
+def sheet_by_rows(headers, rows):
+    sheet_by_rows = []
+    for row in rows:
         # data = {' | '.join(headers[i]): val
         data = {json.dumps(headers[i]): val
                     for i, val in enumerate(row)}
-        all_data.append(data)
+        sheet_by_rows.append(data)
 
-    return all_data
+    return sheet_by_rows
+
+
+def sheet_by_cols(headers, rows):
+    sheet_by_cols = {json.dumps(header): [] for header in headers}
+    for row in rows: 
+        for i, val in enumerate(row): 
+            keys = list(sheet_by_cols.keys())
+            col_dict = sheet_by_cols[keys[i]]
+            col_dict.append(val)
+
+    return sheet_by_cols
 
 
 
@@ -97,11 +108,13 @@ if __name__ == "__main__":
         sheet_num=9,
         from_web=False
     )
-    headers, col_vals = make_headers(
+    headers, rows = make_headers(
         all_vals,
         starts_at=2,
         num_rows=3
     )
-    all_data = join_headers_vals(headers, col_vals)
+    sheet_by_rows = sheet_by_rows(headers, rows)
+    sheet_by_cols = sheet_by_cols(headers, rows)
 
-    print(json.dumps(all_data, indent=2))
+    print(json.dumps(sheet_by_rows, indent=2))
+    print(json.dumps(sheet_by_cols, indent=2))
