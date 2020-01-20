@@ -13,8 +13,6 @@ def _fix_merge_headers(merged_headers):
                 curr = list(col)
             new_col.append(item or curr[i])
             curr[i] = item or curr[i]
-            # if len(new_col) > 1 and not new_col[-1]:
-            #     new_col[-1] = new_col[-2]
         unmerged_headers.append(new_col)
 
     # Fill in blanks cells
@@ -24,12 +22,15 @@ def _fix_merge_headers(merged_headers):
                 unmerged_headers[i][j] = unmerged_headers[i][j-1]
 
     # Fix blank top rows
-    m = 0
-    for m, val in enumerate(unmerged_headers):
-        if val != "":
-            break
-    for n in range(m):
-        unmerged_headers[n] = val
+    # Note: This doesn't actually work because any blank top rows
+    #       get filled by the prior column. Potentially consider
+    #       also looking at merge data to enable this.
+    # m = 0
+    # for m, val in enumerate(unmerged_headers):
+    #     if val != "":
+    #         break
+    # for n in range(m):
+    #     unmerged_headers[n] = val
 
     return [tuple(header_list) for header_list in unmerged_headers]
 
