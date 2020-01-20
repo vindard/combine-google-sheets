@@ -6,4 +6,4 @@ data
 .env
 env*
 __pycache__
-
+*.txt
