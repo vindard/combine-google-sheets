@@ -14,10 +14,10 @@ def get_client(creds_json=CREDS_JSON):
     return client
 
 
-def open_workbook(workbook_name, client=None):
+def open_workbook(wb_name, client=None):
     if not client:
         client = get_client()
 
-    open_workbook = client.open(workbook_name)
+    open_wb = client.open(wb_name)
 
-    return open_workbook
+    return wb_name, open_wb
