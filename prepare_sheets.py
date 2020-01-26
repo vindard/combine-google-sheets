@@ -98,50 +98,33 @@ def add_headers_to_sheet_dicts(sheet_dicts: SheetDicts) -> SheetDicts:
     return updated_sheet_dicts
 
 def compare_sheet_headers(sheet_dicts, workbooks=(0, 1), sheet_num=4):
-    a = sheet_dicts
+    wb1_idx, wb2_idx = workbooks
+    sheet_idx = sheet_num - 1
+    keys = list(sheet_dicts.keys())
 
-    b = a[list(a.keys())[workbooks[0]]]
-    sheet = b[list(b.keys())[sheet_num-1]]
-    headers = sheet['headers']
+    # Fetch ws1 dict for sheet_num
+    wb1_name = keys[wb1_idx]
+    wb1 = sheet_dicts[wb1_name]
+    wb1_names = list(wb1.keys())
 
-    c = a[list(a.keys())[workbooks[1]]]
-    sheet_c = c[list(c.keys())[sheet_num-1]]
-    headers_c = sheet_c['headers']
+    wb1_compare_sheet_name = wb1_names[sheet_idx]
+    wb1_compare_sheet = wb1[wb1_compare_sheet_name]
+    wb1_sheet_headers = wb1_compare_sheet['headers']
 
-    # keys = list(sheet_dicts.keys())
+    # Fetch ws2 dict for sheet_num
+    wb2_name = keys[wb2_idx]
+    wb2 = sheet_dicts[wb2_name]
+    wb2_names = list(wb2.keys())
 
-    # # Fetch ws1 dict for sheet_num
-    # wb1_idx = workbooks[0]
-    # wb1 = sheet_dicts[keys[wb1_idx]]
+    wb2_compare_sheet_name = wb2_names[sheet_idx]
+    wb2_compare_sheet = wb2[wb2_compare_sheet_name]
+    wb2_sheet_headers = wb2_compare_sheet['headers']
 
-    # wb1_keys = list(wb1.keys())
-    # ws1_idx = sheet_num - 1
-    # ws1_name = wb1_keys[ws1_idx]
-    # print(f"ws1: {ws1_name}")
-    # ws1 = wb1[ws1_name]
+    # Prepare results
+    wb1_headers_tuple = wb1_sheet_headers, set(wb1_sheet_headers)
+    wb2_headers_tuple = wb2_sheet_headers, set(wb2_sheet_headers)
 
-    # headers1 = ws1['headers']
-    # headers1_set = set(headers1)
-
-    ##########################
-
-    # # Fetch ws2 dict for sheet_num
-    # wb2_idx = workbooks[1]
-    # wb2 = sheet_dicts[keys[wb2_idx]]
-
-    # wb2_keys = list(wb2.keys())
-    # ws2_idx = sheet_num - 1
-    # ws2_name = wb2_keys[ws2_idx]
-    # print(f"ws2: {ws2_name}")
-    # ws2 = wb2[ws2_name]
-
-    # headers2 = ws1['headers']
-    # headers2_set = set(headers2)
-
-    # return headers1, headers1_set, headers2, headers2_set
-
-    return headers, set(headers), headers_c, set(headers_c)
-
+    return wb1_headers_tuple, wb2_headers_tuple
 
 def run():
     wbs_open = fetch_all_workbooks()
@@ -154,7 +137,7 @@ def run_compare(sheet_dicts, sheet1_idx=0, sheet2_idx=1):
     print("\n====================")
     print(f"Running compare for workbooks '{sheet1_idx}' & '{sheet2_idx}'")
     for i in range(10):
-        h1, hs1, h2, hs2 = compare_sheet_headers(sheet_dicts, (sheet1_idx, sheet2_idx), sheet_num=i)
+        (h1, hs1), (h2, hs2) = compare_sheet_headers(sheet_dicts, (sheet1_idx, sheet2_idx), sheet_num=i)
         set_diff = hs1 - hs2
         print(f"\n\n[ {i} ]")
         if not set_diff:
