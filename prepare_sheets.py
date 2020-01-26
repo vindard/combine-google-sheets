@@ -62,7 +62,7 @@ def build_sheet_dict(wb_name: str, wb: Spreadsheet) -> SheetDict:
         template_dict: SheetDict = json.loads(contents)
 
     for sheet in sheet_dict:
-        sheet_dict[sheet]['header_info_tuple'] = template_dict[sheet]['header_info_tuple']
+        sheet_dict[sheet]['header_info_dict'] = template_dict[sheet]['header_info_dict']
 
     print(f"\'{wb.title}\' template built!\n")
     return wb_name, sheet_dict
@@ -93,7 +93,8 @@ def sheet_fetch_headers_vals(ws: Worksheet, start_at: int, num_rows: int) -> Any
 def prepare_sheet_headers_fetch(ws_name, sheet_dict):
     ws: Worksheet = sheet_dict[ws_name]['sheet']
     print(f"Fetching for {ws_name}...")
-    start_at, num_rows = sheet_dict[ws_name]['header_info_tuple']
+    h = sheet_dict[ws_name]['header_info_dict']
+    start_at, num_rows = h['start_at'], h['num_rows']
     headers, _ = sheet_fetch_headers_vals(ws, start_at, num_rows)
 
     return ws_name, headers
