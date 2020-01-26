@@ -134,6 +134,7 @@ def compare_sheet_headers(sheet_dicts, workbooks=(0, 1), sheet_num=4):
     wb1_compare_sheet_name = wb1_names[sheet_idx]
     wb1_compare_sheet = wb1[wb1_compare_sheet_name]
     wb1_sheet_headers = wb1_compare_sheet['headers']
+    print()
 
     # Fetch ws2 dict for sheet_num
     wb2_name = keys[wb2_idx]
@@ -170,5 +171,6 @@ def run_compare(sheet_dicts, sheet1_idx=0, sheet2_idx=1):
             for i, val in enumerate(set_diff):
                 print(f"{i+1}. {val}")
 
-sheet_dicts = run()
-run_compare(sheet_dicts, 0, 2)
+if __name__ == "__main__":
+    sheet_dicts = run()
+    run_compare(sheet_dicts, 0, 2)
