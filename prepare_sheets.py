@@ -1,4 +1,6 @@
 import json
+from concurrent.futures import Future
+from concurrent.futures.thread import ThreadPoolExecutor as PoolExecutor
 from typing import List, Dict, Sequence, Union, Any
 
 from gspread.models import Spreadsheet, Worksheet
@@ -44,7 +46,7 @@ def fetch_all_workbooks() -> Dict[str, Spreadsheet]:
 
     return wbs_open
 
-def build_sheet_dict(wb: Spreadsheet) -> SheetDict:
+def build_sheet_dict(wb_name: str, wb: Spreadsheet) -> SheetDict:
     print(f"Building sheet_dict for \'{wb.title}\'...")
     sheet_dict: SheetDict = {}
     worksheets: List[Worksheet] = wb.worksheets()
@@ -63,14 +65,21 @@ def build_sheet_dict(wb: Spreadsheet) -> SheetDict:
         sheet_dict[sheet]['header_info_tuple'] = template_dict[sheet]['header_info_tuple']
 
     print(f"\'{wb.title}\' template built!\n")
-    return sheet_dict
+    return wb_name, sheet_dict
 
-def wbs_to_sheet_dicts(wbs_open: Dict[str, Spreadsheet]) -> SheetDicts:
+def threaded_wbs_to_sheet_dicts(wbs_open: Dict[str, Spreadsheet]) -> SheetDicts:
     print(f"Collecting sheet_dicts...\n")
-    sheet_dicts = {wb_name: build_sheet_dict(wb)
-                    for wb_name, wb in wbs_open.items()}
+    sheet_dicts_tasks = []
+    with PoolExecutor() as executor:
+        for wb_name, wb in wbs_open.items():
+            f: Future = executor.submit(build_sheet_dict, wb_name, wb)
+            sheet_dicts_tasks.append(f)
 
+    # Collect results from complete tasks
+    sheet_dicts = {sheet_dict.result()[0]: sheet_dict.result()[1]
+                        for sheet_dict in sheet_dicts_tasks}
     print(f"{len(sheet_dicts)} sheet_dicts collected\n")
+
     return sheet_dicts
 
 
@@ -81,18 +90,32 @@ def sheet_fetch_headers_vals(ws: Worksheet, start_at: int, num_rows: int) -> Any
 
     return headers, vals
 
-def add_headers_to_sheet_dict(sheet_dict: SheetDict) -> SheetDict:
-    for i, ws_name in enumerate(sheet_dict):
-        ws: Worksheet = sheet_dict[ws_name]['sheet']
-        print(f"Fetching for {ws_name}...")
-        start_at, num_rows = sheet_dict[ws_name]['header_info_tuple']
-        headers, _ = sheet_fetch_headers_vals(ws, start_at, num_rows)
+def prepare_sheet_headers_fetch(ws_name, sheet_dict):
+    ws: Worksheet = sheet_dict[ws_name]['sheet']
+    print(f"Fetching for {ws_name}...")
+    start_at, num_rows = sheet_dict[ws_name]['header_info_tuple']
+    headers, _ = sheet_fetch_headers_vals(ws, start_at, num_rows)
+
+    return ws_name, headers
+
+
+def threaded_add_headers_to_sheet_dict(sheet_dict: SheetDict) -> SheetDict:
+    header_tasks = []
+    with PoolExecutor() as executor:
+        for ws_name in sheet_dict:
+            f: Future = \
+                executor.submit(prepare_sheet_headers_fetch, ws_name, sheet_dict)
+            header_tasks.append(f)
+
+    # Collect results from complete tasks
+    for task in header_tasks:
+        ws_name, headers = task.result()
         sheet_dict[ws_name]['headers'] = headers
 
     return sheet_dict
 
 def add_headers_to_sheet_dicts(sheet_dicts: SheetDicts) -> SheetDicts:
-    updated_sheet_dicts = {name: add_headers_to_sheet_dict(sheet_dict)
+    updated_sheet_dicts = {name: threaded_add_headers_to_sheet_dict(sheet_dict)
                 for name, sheet_dict in sheet_dicts.items()}
 
     return updated_sheet_dicts
@@ -128,7 +151,7 @@ def compare_sheet_headers(sheet_dicts, workbooks=(0, 1), sheet_num=4):
 
 def run():
     wbs_open = fetch_all_workbooks()
-    sheet_dicts = wbs_to_sheet_dicts(wbs_open)
+    sheet_dicts = threaded_wbs_to_sheet_dicts(wbs_open)
     sheet_dicts_w_headers = add_headers_to_sheet_dicts(sheet_dicts)
 
     return sheet_dicts_w_headers
@@ -146,3 +169,5 @@ def run_compare(sheet_dicts, sheet1_idx=0, sheet2_idx=1):
             for i, val in enumerate(set_diff):
                 print(f"{i+1}. {val}")
 
+sheet_dicts = run()
+run_compare(sheet_dicts, 0, 2)
