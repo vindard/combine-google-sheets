@@ -5,6 +5,9 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 CREDS_JSON = os.environ['CREDS_JSON']
 
+MASTER_WORKBOOK = os.environ.get('MASTER_WORKBOOK', '')
+SHEET_DICT_TEMPLATE = 'wb_template.json'
+
 
 def get_client(creds_json=CREDS_JSON):
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
