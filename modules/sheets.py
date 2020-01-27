@@ -18,9 +18,9 @@ def prepare_sheet_headers_fetch(wb_name, ws_name, sheet_dict):
     print(f"In '{wb_name[:10]}...' workbook")
     h = sheet_dict[ws_name]['header_info_dict']
     start_at, num_rows = h['start_at'], h['num_rows']
-    headers, _ = sheet_fetch_headers_vals(ws, start_at, num_rows)
+    headers, vals = sheet_fetch_headers_vals(ws, start_at, num_rows)
 
-    return ws_name, headers
+    return ws_name, headers, vals
 
 
 def sheet_by_rows(headers, vals):

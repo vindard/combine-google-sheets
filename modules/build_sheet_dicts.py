@@ -10,8 +10,10 @@ from libs.types import SheetDict, SheetDicts, Row, SheetValues
 from modules.sheets import prepare_sheet_headers_fetch
 from modules.workbooks import fetch_all_workbooks
 
+COUNTER = 0
 
 def build_sheet_dict(wb_name: str, wb: Spreadsheet) -> Tuple[str, SheetDict]:
+    global COUNTER
     print(f"Building sheet_dict for \'{wb.title}\'...")
     sheet_dict: SheetDict = {}
     worksheets: List[Worksheet] = wb.worksheets()
@@ -29,7 +31,8 @@ def build_sheet_dict(wb_name: str, wb: Spreadsheet) -> Tuple[str, SheetDict]:
     for sheet in sheet_dict:
         sheet_dict[sheet]['header_info_dict'] = template_dict[sheet]['header_info_dict']
 
-    print(f"\'{wb.title}\' template built!")
+    COUNTER += 1
+    print(f"{COUNTER}. \'{wb.title}\' template built!")
     return wb_name, sheet_dict
 
 def threaded_wbs_to_sheet_dicts(wbs_open: Dict[str, Spreadsheet]) -> SheetDicts:
@@ -51,7 +54,7 @@ def threaded_wbs_to_sheet_dicts(wbs_open: Dict[str, Spreadsheet]) -> SheetDicts:
     return sheet_dicts
 
 
-def threaded_add_headers_to_sheet_dict(wb_name: str, sheet_dict: SheetDict) -> SheetDict:
+def threaded_add_all_vals_to_sheet_dict(wb_name: str, sheet_dict: SheetDict) -> SheetDict:
     header_tasks = []
     with PoolExecutor() as executor:
         for ws_name in sheet_dict:
@@ -61,12 +64,13 @@ def threaded_add_headers_to_sheet_dict(wb_name: str, sheet_dict: SheetDict) -> S
 
     # Collect results from complete tasks
     for task in header_tasks:
-        ws_name, headers = task.result()
+        ws_name, headers, vals = task.result()
         sheet_dict[ws_name]['headers'] = headers
+        sheet_dict[ws_name]['vals'] = vals
 
     return wb_name, sheet_dict
 
-def threaded_add_headers_to_sheet_dicts(sheet_dicts: SheetDicts) -> SheetDicts:
+def threaded_add_all_vals_to_sheet_dicts(sheet_dicts: SheetDicts) -> SheetDicts:
     print("\n=======================================")
     print(f"Fetching Sheet Headers for {len(sheet_dicts)} workbooks")
     print("=======================================")
@@ -75,7 +79,7 @@ def threaded_add_headers_to_sheet_dicts(sheet_dicts: SheetDicts) -> SheetDicts:
     sheet_dicts_update_tasks = []
     with PoolExecutor() as executor:
         for wb_name, sheet_dict in sheet_dicts.items():
-            f: Future = executor.submit(threaded_add_headers_to_sheet_dict, wb_name, sheet_dict)
+            f: Future = executor.submit(threaded_add_all_vals_to_sheet_dict, wb_name, sheet_dict)
             sheet_dicts_update_tasks.append(f)
 
     # Collect results from complete tasks
@@ -90,7 +94,7 @@ def threaded_add_headers_to_sheet_dicts(sheet_dicts: SheetDicts) -> SheetDicts:
 def run():
     wbs_open = fetch_all_workbooks()
     sheet_dicts = threaded_wbs_to_sheet_dicts(wbs_open)
-    sheet_dicts_w_headers = threaded_add_headers_to_sheet_dicts(sheet_dicts)
+    sheet_dicts_w_headers = threaded_add_all_vals_to_sheet_dicts(sheet_dicts)
 
     return sheet_dicts_w_headers
 

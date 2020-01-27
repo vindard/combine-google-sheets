@@ -1,5 +1,5 @@
 from libs.config import MASTER_WORKBOOK
-from modules.build_sheet_dicts import run
+from modules.build_sheet_dicts import run as build_sheet_dicts
 
 def fetch_sheet_headers(sheet_dicts, wb_name, sheet_num):
     sheet_idx = sheet_num - 1
@@ -56,7 +56,7 @@ def run_compare(sheet_dicts, wb_idx=0):
 
 
 if __name__ == '__main__':
-    sheet_dicts = run()
+    sheet_dicts = build_sheet_dicts()
     diff, results = run_compare(sheet_dicts, 0)
     if diff:
         print(results)

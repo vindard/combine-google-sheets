@@ -21,6 +21,7 @@ def open_workbook(wb_name, client=None):
     if not client:
         client = get_client()
 
+    print(f"Opening workbook '{wb_name}...'")
     open_wb = client.open(wb_name)
 
     return wb_name, open_wb
