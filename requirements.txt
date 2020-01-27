@@ -2,4 +2,6 @@ gspread
 ipython
 mypy
 oauth2client
-
+pandas
+numpy
+openpyxl
