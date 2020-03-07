@@ -23,7 +23,7 @@ def threaded_open_workbooks(wbs_names: List[str]) -> Dict[str, Spreadsheet]:
 
     return wbs_open
 
-def fetch_all_workbooks() -> Dict[str, Spreadsheet]:
+def fetch_all_workbooks(to_exclude: List[Any] = []) -> Dict[str, Spreadsheet]:
     client = get_client()
 
     print("\n======================")
@@ -34,7 +34,7 @@ def fetch_all_workbooks() -> Dict[str, Spreadsheet]:
     wbs = client.list_spreadsheet_files()
     print(f"Fetched {len(wbs)} workbooks from Google Sheets\n")
 
-    wbs_names = [i['name'] for i in wbs]
+    wbs_names = [i['name'] for i in wbs if i['name'] not in to_exclude]
     wbs_open = threaded_open_workbooks(wbs_names)
 
     return wbs_open
